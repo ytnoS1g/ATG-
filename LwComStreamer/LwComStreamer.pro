@@ -11,19 +11,21 @@ QT       += core
 QT       -= gui
 
 TARGET = LwComStreamer
-TEMPLATE = lib
+TEMPLATE = app
 
 DEFINES += LWCOMSTREAMER_LIBRARY
 
 SOURCES += \
     lwcomserialstreamer.cpp \
     lwcomtcpstreamer.cpp \
-    main.cpp
+    main.cpp \
+    lwcom.cpp
 
 HEADERS += lwcomstreamer.h\
         lwcomstreamer_global.h \
     lwcomserialstreamer.h \
-    lwcomtcpstreamer.h
+    lwcomtcpstreamer.h \
+    lwcom.h
 
 unix {
     target.path = /usr/lib

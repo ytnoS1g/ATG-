@@ -20,6 +20,7 @@ bool LwComSerialStreamer::open(QString serialPort,qint32 baudRate)
     _serial->setPortName(serialPort);
     _serial->setDataTerminalReady(true);
     _serial->setBaudRate(baudRate);
+    _serial->setReadBufferSize(0);
     _serial->setDataBits(QSerialPort::Data8);
     _serial->setParity(QSerialPort::NoParity);
     _serial->setStopBits(QSerialPort::OneStop);
@@ -44,11 +45,15 @@ bool LwComSerialStreamer::read(QByteArray &ba, uint32_t size)
 
         to.start();
 
+        ba.resize(size);
+
         qint64 bytes =  _serial->read(ba.data(),size);
+
+        ba.resize(bytes);
 
         while(to.elapsed() < _timeout && bytes < size)//full timeout or all bytes
         {
-            int ms = _timeout - to.elapsed();
+            int ms = _timeout - to.elapsed();//TODO check if negative/0
 
             bool moreBytes = _serial->waitForReadyRead(ms);
             if(moreBytes)
@@ -57,6 +62,7 @@ bool LwComSerialStreamer::read(QByteArray &ba, uint32_t size)
                 tmp.resize(size);
 
                 bytes = _serial->read(tmp.data(),size);
+                tmp.resize(bytes);
                 ba.append(tmp);
             }
             else
@@ -75,9 +81,14 @@ bool LwComSerialStreamer::read(QByteArray &ba, uint32_t size)
 
 bool LwComSerialStreamer::write(const QByteArray &ba)
 {
-    int bytes =_serial->write(ba);
-    if(bytes > 0)//any bytes were read
-        return true;
+    if(_serial->isWritable())
+    {
+        int bytes =_serial->write(ba);
+        if(bytes > 0)//any bytes were read
+            return true;
+        else
+            return false;
+    }
     else
         return false;
 }

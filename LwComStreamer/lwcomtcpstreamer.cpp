@@ -5,7 +5,7 @@
 #include <QSerialPortInfo>
 #include <QTimer>
 #include <QDateTime>
-
+#define VERIFY( V, R )  if ( !(V) ){ retVal = (R); break; }
 LwComTcpStreamer::LwComTcpStreamer()
 {
     _socket = new QTcpSocket();
@@ -35,17 +35,21 @@ void LwComTcpStreamer::close()
 
 bool LwComTcpStreamer::read(QByteArray &ba, uint32_t size)
 {
-    if(_socket->isReadable())
+    if(_socket->isReadable() && _socket->bytesAvailable() > size)
     {
         QTime to = QTime::currentTime();
 
         to.start();
 
+        ba.resize(size);
+
         qint64 bytes =  _socket->read(ba.data(),size);
+
+        ba.resize(bytes);
 
         while(to.elapsed() < _timeout && bytes < size)//full timeout or all bytes
         {
-            int ms = _timeout - to.elapsed();
+            int ms = _timeout - to.elapsed();//TODO check if negative/0
 
             bool moreBytes = _socket->waitForReadyRead(ms);//wait for more
             if(moreBytes)
@@ -54,6 +58,7 @@ bool LwComTcpStreamer::read(QByteArray &ba, uint32_t size)
                 tmp.resize(size);
 
                 bytes =  _socket->read(tmp.data(),size);
+                tmp.resize(bytes);
                 ba.append(tmp);
             }
             else
@@ -69,11 +74,17 @@ bool LwComTcpStreamer::read(QByteArray &ba, uint32_t size)
     else
         return false;
 }
+
 bool LwComTcpStreamer::write(const QByteArray &ba)
 {
-    int bytes =_socket->write(ba);
-    if(bytes > 0)//any bytes were read
-        return true;
+    if(_socket->isWritable())
+    {
+        int bytes =_socket->write(ba);
+        if(bytes > 0)//any bytes were read
+            return true;
+        else
+            return false;
+    }
     else
         return false;
 }

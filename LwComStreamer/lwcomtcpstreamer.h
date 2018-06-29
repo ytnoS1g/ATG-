@@ -2,6 +2,7 @@
 #define LWCOMTCPSTREAMER_H
 #include "lwcomstreamer.h"
 #include <QTcpSocket>
+#include <QDataStream>
 class LwComTcpStreamer : public LwComStreamer
 {
 private:
